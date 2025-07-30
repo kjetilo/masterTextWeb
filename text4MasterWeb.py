@@ -1,6 +1,9 @@
 import streamlit as st
 
 st.write("Denne nettsiden lager tekst for dokumenter som skal lastes opp til Master.")
+st.write("Skriv først inn artikkelnummer som dokumentet eventuelt skal knyttes til. Om det er til flere artikler kan man skrive f.eks. AE2010 eller Aspect. Da vil man måtte knytte den manuelt til de artiklene den skal til i ettertid.")
+
+artNo = st.text_input("Artikkelnummer:", placeholder="Skriv inn artikkelnummer her")
 
 docType = st.radio(
     "Først velger du dokumenttypen som stemmer overens med det du skal laste opp.",
@@ -58,7 +61,6 @@ else:
     st.error("En uventet feil har oppstått. Vennligst prøv igjen.")
     st.stop()
 
-artNo = st.text_input("Artikkelnummer:", placeholder="Skriv inn artikkelnummer her")
 revNo = st.text_input("Revisjonsnummer:","R1A")
 
 quality = st.radio(
