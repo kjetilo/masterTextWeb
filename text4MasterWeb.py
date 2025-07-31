@@ -53,7 +53,7 @@ elif docType == "Godkjenning :ballot_box_with_check:":
     docType = "150"
     docText = "godkjenning"
 elif docType == "Annet dokument :page_facing_up:":
-    docType = " "
+    docType = ""
     docText = "annet dokument"  # Dette er en plassholder for andre dokumenter som ikke er spesifisert
                             # Ved dokument som ikke er speisifisert. Ellers skal denne blokken gjøre at man kan sette sammen en streng som kan brukes til å generere teksten lenger nede.
                             # Denne oversetter doktype 4 = datablad osv.
@@ -64,7 +64,7 @@ else:
 revNo = st.text_input("Revisjonsnummer:","R1A")
 
 quality = st.radio(
-    "Først velger du dokumenttypen som stemmer overens med det du skal laste opp.",
+    "Velg kvaliteten dokumentet skal publiseres som.",
     ["Web", "Print", "Stamme"],
     captions=[
         "Brukes til nett og generelt til det meste.",
