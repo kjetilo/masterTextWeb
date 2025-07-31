@@ -1,4 +1,5 @@
 import streamlit as st
+import json
 
 st.write("Denne nettsiden lager tekst for dokumenter som skal lastes opp til Master.")
 st.write("Skriv først inn artikkelnummer som dokumentet eventuelt skal knyttes til. Om det er til flere artikler kan man skrive f.eks. AE2010 eller Aspect. Da vil man måtte knytte den manuelt til de artiklene den skal til i ettertid.")
@@ -102,3 +103,21 @@ else:
     toBeCopy = (f"{quality}{docType}¤{artNo} {docText}{språk}¤{artNo}¤{revNo}")
 
 st.code(toBeCopy, language="text")
+
+copy_button = f"""
+    <style>
+        .copy-btn {{
+            background-color: #ff4b4b;
+            color: white;
+            padding: 0.5em 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-top: 0.5em;
+        }}
+    </style>
+    <button class='copy-btn' onclick="navigator.clipboard.writeText({json.dumps(toBeCopy)})">Kopier tekst</button>
+"""
+
+st.markdown(copy_button, unsafe_allow_html=True)
