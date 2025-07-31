@@ -1,12 +1,12 @@
 import streamlit as st
 
-st.write("Denne nettsiden lager tekst for dokumenter som skal lastes opp til Master.")
+st.write("## Tekstgenerator for Master")
 st.write("Skriv først inn artikkelnummer som dokumentet eventuelt skal knyttes til. Om det er til flere artikler kan man skrive f.eks. AE2010 eller Aspect. Da vil man måtte knytte den manuelt til de artiklene den skal til i ettertid.")
-
-artNo = st.text_input("Artikkelnummer:", placeholder="Skriv inn artikkelnummer her")
-
+st.write("#### Artikkelnummer")
+artNo = st.text_input("Skriv inn artikkelnummer her")
+st.write("#### Dokumenttype")
 docType = st.radio(
-    "Først velger du dokumenttypen som stemmer overens med det du skal laste opp.",
+    "Velg dokumenttypen som stemmer overens med det du skal laste opp.",
     ["Datablad :ledger:","Installasjonsmanual :open_book:", "Brukermanual :closed_book:", "Forenklet brukerveiledning  :clock9:", "Forenklet installasjonsveiledning :japan:", "Leverandørdokumentasjon :file_folder:", "Sertifikat :bookmark_tabs:", "Egenerklæring :memo:", "Sikkerhetsdatablad :warning:", "Godkjenning :ballot_box_with_check:", "Annet dokument :page_facing_up:"],
     captions=[
         "Datablad beskriver tekniske spesifikasjoner og egenskaper. Brukes ofte som FDV i vår bransje.",
@@ -53,7 +53,7 @@ elif docType == "Godkjenning :ballot_box_with_check:":
     docType = "150"
     docText = "godkjenning"
 elif docType == "Annet dokument :page_facing_up:":
-    docType = " "
+    docType = ""
     docText = "annet dokument"  # Dette er en plassholder for andre dokumenter som ikke er spesifisert
                             # Ved dokument som ikke er speisifisert. Ellers skal denne blokken gjøre at man kan sette sammen en streng som kan brukes til å generere teksten lenger nede.
                             # Denne oversetter doktype 4 = datablad osv.
@@ -61,10 +61,12 @@ else:
     st.error("En uventet feil har oppstått. Vennligst prøv igjen.")
     st.stop()
 
-revNo = st.text_input("Revisjonsnummer:","R1A")
+st.write("#### Revisjonsnummer")
+revNo = st.text_input("Kontroller at revisjonsnummer stemmer overens med det i dokumentet.","R1A")
 
+st.write("#### Kvalitet")
 quality = st.radio(
-    "Først velger du dokumenttypen som stemmer overens med det du skal laste opp.",
+    "Velg kvalitet i henhold til dokumentets kvalitet og egenskap.",
     ["Web", "Print", "Stamme"],
     captions=[
         "Brukes til nett og generelt til det meste.",
@@ -78,9 +80,9 @@ elif quality == "Print":
     quality = "13"
 elif quality == "Stamme":
     quality = "17"
-
+st.write("#### Språk")
 språk = st.radio(
-    "Språk:",
+    "Velg språket som er brukt i dokumentet.",
     ["Norsk", "Engelsk", "Ikke språk"],
     captions=[
         "Norsk språk.",
