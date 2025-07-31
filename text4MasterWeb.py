@@ -101,4 +101,5 @@ if docType in ["150", "151", "153", "155"]:
 else:
     toBeCopy = (f"{quality}{docType}¤{artNo} {docText}{språk}¤{artNo}¤{revNo}")
 
-st.code(toBeCopy, language="text")
+st.markdown("### Kopier teksten under til Master:")
+st.text_area("", toBeCopy, height=100)
