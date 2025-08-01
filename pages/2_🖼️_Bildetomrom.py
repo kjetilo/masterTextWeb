@@ -3,7 +3,7 @@ from PIL import Image
 import io, zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-st.title("Fjern tomrommet på kantene av PNG/WebP-bilder og konverter til WebP")
+st.title("Fjern tomrommet på kantene av bilder og konverter til WebP")
 st.sidebar.header("Innstillinger")
 
 # Slider for WebP-kvalitet
@@ -16,9 +16,21 @@ webp_quality = st.sidebar.slider(
     help="Lavere verdi gir mindre filer, men lavere bildekvalitet"
 )
 
+# Filnavnvalg
+st.sidebar.subheader("Filnavnvalg")
+article_number = st.sidebar.text_input(
+    "Artikkelnummer for filnavn",
+    value="",
+    help="Fyll inn hvis du vil at filene skal hete f.eks. AE2010R, 1.webp"
+)
+keep_original_names = st.sidebar.checkbox(
+    "Behold opprinnelige filnavn",
+    value=False
+)
+
 uploaded_files = st.file_uploader(
-    "Last opp opptil 300 PNG eller WebP-bilder samtidig.",
-    type=["png", "webp"],
+    "Last opp opptil 300 .png, .jpg, .gif, .bmp, .tiff, .tif  eller .webp-bilder samtidig.",
+    type=["png", "webp", "jpg", "jpeg", "gif", "bmp", "tiff", "tif"],
     accept_multiple_files=True
 )
 
@@ -28,7 +40,7 @@ def trim_transparent(image: Image.Image) -> Image.Image:
     bbox = img.getbbox()
     return img.crop(bbox) if bbox else img
 
-def process_file(file, quality=90):
+def process_file(file, idx, quality=90, article_number="", keep_original=False):
     """Processes a single uploaded file: trims and converts to WebP"""
     image = Image.open(file)
     trimmed_image = trim_transparent(image)
@@ -37,11 +49,16 @@ def process_file(file, quality=90):
     trimmed_image.save(buf, format="WEBP", quality=quality, method=6)
     buf.seek(0)
 
-    out_name = f"cropped_{file.name.rsplit('.', 1)[0]}.webp"
+    # Bestem filnavn
+    if keep_original or not article_number.strip():
+        out_name = f"cropped_{file.name.rsplit('.', 1)[0]}.webp"
+    else:
+        out_name = f"{article_number.strip()}, {idx + 1}.webp"
+
     return out_name, buf.getvalue()
 
 @st.cache_data(show_spinner=False)
-def process_images(files, quality):
+def process_images(files, quality, article_number="", keep_original=False):
     """Process all images in parallel and cache the result"""
     files_to_process = files[:300]
     total = len(files_to_process)
@@ -51,7 +68,10 @@ def process_images(files, quality):
     status_text = st.empty()
 
     with ThreadPoolExecutor(max_workers=8) as executor:
-        futures = {executor.submit(process_file, file, quality): file for file in files_to_process}
+        futures = {
+            executor.submit(process_file, file, idx, quality, article_number, keep_original): file
+            for idx, file in enumerate(files_to_process)
+        }
 
         for idx, future in enumerate(as_completed(futures), start=1):
             filename, data = future.result()
@@ -66,7 +86,7 @@ def process_images(files, quality):
     return cropped_images
 
 if uploaded_files:
-    cropped_images = process_images(uploaded_files, webp_quality)
+    cropped_images = process_images(uploaded_files, webp_quality, article_number, keep_original_names)
 
     st.subheader("🔽 Nedlastingsvalg")
 
