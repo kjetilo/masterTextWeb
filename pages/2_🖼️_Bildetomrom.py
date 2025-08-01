@@ -1,6 +1,7 @@
 import streamlit as st
 from PIL import Image
 import io, zipfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 st.title("Fjern tomrommet på kantene av PNG/WebP-bilder og konverter til WebP")
 st.sidebar.header("Innstillinger")
@@ -27,35 +28,45 @@ def trim_transparent(image: Image.Image) -> Image.Image:
     bbox = img.getbbox()
     return img.crop(bbox) if bbox else img
 
+def process_file(file, quality=90):
+    """Processes a single uploaded file: trims and converts to WebP"""
+    image = Image.open(file)
+    trimmed_image = trim_transparent(image)
+
+    # Save as WebP in memory
+    buf = io.BytesIO()
+    trimmed_image.save(buf, format="WEBP", quality=quality, method=6)
+    buf.seek(0)
+
+    out_name = f"cropped_{file.name.rsplit('.', 1)[0]}.webp"
+    return out_name, buf.getvalue()
+
 if uploaded_files:
     files_to_process = uploaded_files[:100]
     st.write(f"Antall bilder lastet opp: {len(files_to_process)}")
 
-    cropped_images = []
-
-    # --- Progress bar and status ---
+    # --- Progress bar ---
     progress_bar = st.progress(0)
     status_text = st.empty()
 
-    # --- Process files ---
-    for idx, file in enumerate(files_to_process, start=1):
-        image = Image.open(file)
-        trimmed_image = trim_transparent(image)
+    cropped_images = []
+    total = len(files_to_process)
 
-        # Lagre beskåret bilde som WebP med valgt kvalitet
-        buf = io.BytesIO()
-        trimmed_image.save(buf, format="WEBP", quality=webp_quality, method=6)
-        buf.seek(0)
+    # Process images in parallel
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        # Submit all tasks to the executor
+        futures = {executor.submit(process_file, file, webp_quality): file for file in files_to_process}
 
-        # Gi nytt navn med .webp
-        out_name = f"cropped_{file.name.rsplit('.', 1)[0]}.webp"
-        cropped_images.append((out_name, buf.getvalue()))
+        # Collect results as they complete
+        for idx, future in enumerate(as_completed(futures), start=1):
+            filename, data = future.result()
+            cropped_images.append((filename, data))
 
-        # --- Update progress ---
-        progress_bar.progress(idx / len(files_to_process))
-        status_text.text(f"Behandler bilde {idx}/{len(files_to_process)}...")
+            # Update progress
+            progress_bar.progress(idx / total)
+            status_text.text(f"Behandler bilde {idx}/{total}...")
 
-    # --- Done ---
+    # Done
     status_text.text("✅ Ferdig!")
     progress_bar.empty()
 
