@@ -2,10 +2,21 @@ import streamlit as st
 from PIL import Image
 import io, zipfile
 
-st.title("Fjern tomrommet på kantene av PNG/WebP-bilder")
+st.title("Fjern tomrommet på kantene av PNG/WebP-bilder og konverter til WebP")
+st.sidebar.header("Innstillinger")
+
+# Slider for WebP-kvalitet
+webp_quality = st.sidebar.slider(
+    "Velg WebP-kvalitet",
+    min_value=50,
+    max_value=100,
+    value=90,
+    step=1,
+    help="Lavere verdi gir mindre filer, men lavere bildekvalitet"
+)
 
 uploaded_files = st.file_uploader(
-    "Last opp opptil 100 PNG eller WebP-bilder samtidig. Send mail til kjetilo@elotec.no for forslag eller opplever problemer.",
+    "Last opp opptil 100 PNG eller WebP-bilder samtidig. Send mail til kjetilo@elotec.no for forslag eller problemer.",
     type=["png", "webp"],
     accept_multiple_files=True
 )
@@ -22,15 +33,31 @@ if uploaded_files:
 
     cropped_images = []
 
-    for file in files_to_process:
+    # --- Progress bar and status ---
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
+    # --- Process files ---
+    for idx, file in enumerate(files_to_process, start=1):
         image = Image.open(file)
         trimmed_image = trim_transparent(image)
 
-        # Lagre beskåret bilde i minnet
+        # Lagre beskåret bilde som WebP med valgt kvalitet
         buf = io.BytesIO()
-        trimmed_image.save(buf, format="PNG")
+        trimmed_image.save(buf, format="WEBP", quality=webp_quality, method=6)
         buf.seek(0)
-        cropped_images.append((f"cropped_{file.name}.png", buf.getvalue()))
+
+        # Gi nytt navn med .webp
+        out_name = f"cropped_{file.name.rsplit('.', 1)[0]}.webp"
+        cropped_images.append((out_name, buf.getvalue()))
+
+        # --- Update progress ---
+        progress_bar.progress(idx / len(files_to_process))
+        status_text.text(f"Behandler bilde {idx}/{len(files_to_process)}...")
+
+    # --- Done ---
+    status_text.text("✅ Ferdig!")
+    progress_bar.empty()
 
     # --- Nedlastingsknapper øverst ---
     st.subheader("🔽 Nedlastingsvalg")
@@ -44,9 +71,9 @@ if uploaded_files:
         zip_buffer.seek(0)
 
         st.download_button(
-            label="Last ned alle som ZIP",
+            label=f"Last ned alle som ZIP (WebP, kvalitet {webp_quality})",
             data=zip_buffer,
-            file_name="cropped_images.zip",
+            file_name="cropped_images_webp.zip",
             mime="application/zip"
         )
 
@@ -56,12 +83,14 @@ if uploaded_files:
             label=f"Last ned {filename}",
             data=data,
             file_name=filename,
-            mime="image/png",
+            mime="image/webp",
             key=f"dl_{filename}"
         )
 
     st.divider()  # Skillelinje før forhåndsvisningene
 
-    # --- Vis alle bilder nederst ---
-    for filename, data in cropped_images:
-        st.image(data, width=200, caption=f"Beskåret: {filename}")
+    # --- Vis alle bilder nederst i 3 kolonner ---
+    cols = st.columns(3)
+    for idx, (filename, data) in enumerate(cropped_images):
+        with cols[idx % 3]:
+            st.image(data, caption=f"Beskåret: {filename}", use_container_width=True)

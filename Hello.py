@@ -6,6 +6,6 @@ st.set_page_config(
 )
 
 st.write("# Her finner du verktøy for Master👋")
-st.write(" Se i fanen til venstre for å velge verktøyene du ønsker å bruke.")
+st.write(" Se i fanen til venstre for å velge verktøyet du ønsker å bruke.")
 
 st.sidebar.success("Velg det du ønsker å bruke over☝️")
