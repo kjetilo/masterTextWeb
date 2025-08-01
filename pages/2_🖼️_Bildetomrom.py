@@ -9,7 +9,7 @@ st.sidebar.header("Innstillinger")
 # Slider for WebP-kvalitet
 webp_quality = st.sidebar.slider(
     "Velg WebP-kvalitet",
-    min_value=50,
+    min_value=0,
     max_value=100,
     value=90,
     step=1,
