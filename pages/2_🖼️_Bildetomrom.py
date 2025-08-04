@@ -58,6 +58,17 @@ keep_original_names = st.sidebar.checkbox(
     value=False
 )
 
+append_original_after_article = st.sidebar.checkbox(
+    "Behold originalt filnavn etter artikkelnummer",
+    value=False,
+    help="Gir f.eks. 'AE2010R, originalfilnavn.png' i stedet for 'AE2010R, 1.png'"
+)
+
+# Automatisk: Hvis du velger å beholde originalt filnavn etter artikkelnummer, 
+# så ignoreres nummerering og keep_original_names
+if append_original_after_article:
+    keep_original_names = False
+
 uploaded_files = st.file_uploader(
     "Last opp opptil 300 bilder (.png, .jpg, .jpeg, .gif, .bmp, .tiff, .tif, .webp, .avif, .heic, .heif)",
     type=["png", "webp", "jpg", "jpeg", "gif", "bmp", "tiff", "tif", "avif", "heic", "heif"],
@@ -83,7 +94,9 @@ def make_square(image: Image.Image, padding_ratio: float = 0.1) -> Image.Image:
 
     return square_img
 
-def process_file(file, idx, quality=90, article_number="", keep_original=False, make_square_images=False, padding_ratio=0.1, output_format="WebP"):
+def process_file(file, idx, quality=90, article_number="", keep_original=False,
+                 make_square_images=False, padding_ratio=0.1,
+                 output_format="WebP", append_original=False):
     """Behandler en fil: Trimmer og konverterer til valgt format"""
     try:
         image = Image.open(file)
@@ -92,11 +105,10 @@ def process_file(file, idx, quality=90, article_number="", keep_original=False, 
 
     trimmed_image = trim_transparent(image)
 
-    # Hvis valgt, gjør bildet kvadratisk med luft
     if make_square_images:
         trimmed_image = make_square(trimmed_image, padding_ratio)
 
-    # Bestem filformat og konverter
+    # Konverter til valgt format
     buf = io.BytesIO()
     ext = output_format.lower()
     save_format = "WEBP" if output_format == "WebP" else "PNG"
@@ -104,21 +116,26 @@ def process_file(file, idx, quality=90, article_number="", keep_original=False, 
     if output_format == "WebP":
         trimmed_image.save(buf, format=save_format, quality=quality, method=6)
     else:
-        # PNG ignorerer kvalitet, lagres tapsfritt
         trimmed_image.save(buf, format=save_format)
 
     buf.seek(0)
 
     # Bestem filnavn
+    original_name = file.name.rsplit('.', 1)[0]
     if keep_original or not article_number.strip():
-        out_name = f"cropped_{file.name.rsplit('.', 1)[0]}.{ext}"
+        out_name = f"cropped_{original_name}.{ext}"
     else:
-        out_name = f"{article_number.strip()}, {idx + 1}.{ext}"
+        if append_original:
+            out_name = f"{article_number.strip()}, {original_name}.{ext}"
+        else:
+            out_name = f"{article_number.strip()}, {idx + 1}.{ext}"
 
     return out_name, buf.getvalue()
 
 @st.cache_data(show_spinner=False)
-def process_images(files, quality, article_number="", keep_original=False, make_square_images=False, padding_ratio=0.1, output_format="WebP"):
+def process_images(files, quality, article_number="", keep_original=False,
+                   make_square_images=False, padding_ratio=0.1, output_format="WebP",
+                   append_original=False):
     """Prosesserer alle bilder parallelt og cacher resultatet"""
     files_to_process = files[:300]
     total = len(files_to_process)
@@ -130,7 +147,8 @@ def process_images(files, quality, article_number="", keep_original=False, make_
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = {
             executor.submit(
-                process_file, file, idx, quality, article_number, keep_original, make_square_images, padding_ratio, output_format
+                process_file, file, idx, quality, article_number, keep_original,
+                make_square_images, padding_ratio, output_format, append_original
             ): file
             for idx, file in enumerate(files_to_process)
         }
@@ -150,7 +168,9 @@ def process_images(files, quality, article_number="", keep_original=False, make_
 
 if uploaded_files:
     processed_images = process_images(
-        uploaded_files, webp_quality, article_number, keep_original_names, make_square_images, padding_ratio, output_format
+        uploaded_files, webp_quality, article_number, keep_original_names,
+        make_square_images, padding_ratio, output_format,
+        append_original=append_original_after_article
     )
 
     st.subheader("🔽 Nedlastingsvalg")

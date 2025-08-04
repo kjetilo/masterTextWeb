@@ -110,4 +110,3 @@ else:
     toBeCopy = (f"{quality}{docType}¤{artNo} {docText}{språk}¤{artNo}¤{revNo}")
 
 st.code(toBeCopy, language="text")
-
