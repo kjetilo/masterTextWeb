@@ -22,7 +22,12 @@ output_format = st.sidebar.radio(
 )
 logo_size_ratio = st.sidebar.slider(
     "Logo-størrelse (prosent av bildebredden)",
-    min_value=5, max_value=50, value=15, step=1
+    min_value=0, max_value=50, value=15, step=1
+)
+logo_opacity = st.sidebar.slider(
+    "Logo-gjennomsiktighet (%)",
+    min_value=0, max_value=100, value=100, step=5,
+    help="100% = helt synlig, 50% = halvtransparent"
 )
 position = st.sidebar.selectbox(
     "Logo-plassering",
@@ -45,8 +50,8 @@ uploaded_images = st.file_uploader(
     accept_multiple_files=True
 )
 
-def overlay_logo(image: Image.Image, logo: Image.Image, size_ratio=0.15, position="Nedre høyre", padding=20):
-    """Legger logo på bildet i ønsket posisjon."""
+def overlay_logo(image: Image.Image, logo: Image.Image, size_ratio=0.15, opacity=1.0, position="Nedre høyre", padding=20):
+    """Legger logo på bildet i ønsket posisjon med valgfri gjennomsiktighet."""
     img = image.convert("RGBA")
     logo = logo.convert("RGBA")
 
@@ -55,6 +60,12 @@ def overlay_logo(image: Image.Image, logo: Image.Image, size_ratio=0.15, positio
     aspect_ratio = logo.width / logo.height
     logo_height = int(logo_width / aspect_ratio)
     logo_resized = logo.resize((logo_width, logo_height), Image.Resampling.LANCZOS)
+
+    # Juster opacity
+    if opacity < 1.0:
+        alpha = logo_resized.getchannel("A")
+        alpha = alpha.point(lambda p: int(p * opacity))
+        logo_resized.putalpha(alpha)
 
     # Beregn posisjon
     if position == "Øvre venstre":
@@ -71,14 +82,14 @@ def overlay_logo(image: Image.Image, logo: Image.Image, size_ratio=0.15, positio
     img.paste(logo_resized, xy, logo_resized)
     return img
 
-def process_image(file, logo, size_ratio, position, padding, output_format):
+def process_image(file, logo, size_ratio, opacity, position, padding, output_format):
     """Behandler ett bilde med logo."""
     try:
         image = Image.open(file)
     except UnidentifiedImageError:
         return None
 
-    result_img = overlay_logo(image, logo, size_ratio, position, padding)
+    result_img = overlay_logo(image, logo, size_ratio, opacity, position, padding)
 
     buf = io.BytesIO()
     save_format = "WEBP" if output_format == "WebP" else "PNG"
@@ -99,7 +110,11 @@ if uploaded_logo and uploaded_images:
         results = []
         with ThreadPoolExecutor(max_workers=8) as executor:
             futures = [
-                executor.submit(process_image, file, logo_img, logo_size_ratio/100, position, padding, output_format)
+                executor.submit(
+                    process_image,
+                    file, logo_img, logo_size_ratio/100, logo_opacity/100,
+                    position, padding, output_format
+                )
                 for file in files
             ]
             for future in as_completed(futures):

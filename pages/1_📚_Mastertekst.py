@@ -3,8 +3,7 @@ import streamlit as st
 st.set_page_config(page_title="Master-tekst",page_icon=":robot_face:",)
 
 
-st.markdown("# Master-tekstgenerator")
-st.sidebar.header("Master-tekstgenerator")
+st.markdown("# 📚Master-tekstgenerator")
 
 st.write("## Tekstgenerator for Master")
 st.write("Skriv først inn artikkelnummer som dokumentet eventuelt skal knyttes til. Om det er til flere artikler kan man skrive f.eks. AE2010 eller Aspect. Da vil man måtte knytte den manuelt til de artiklene den skal til i ettertid.")
