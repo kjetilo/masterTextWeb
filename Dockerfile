@@ -21,4 +21,4 @@ ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
 ENV STREAMLIT_SERVER_ENABLECORS=false
 ENV STREAMLIT_SERVER_HEADLESS=true
 
-ENTRYPOINT ["streamlit", "run", "Hello.py"]
+ENTRYPOINT ["streamlit", "run", "👋_Hello.py"]

@@ -27,44 +27,27 @@ docType = st.radio(
         "Master håndterer de fleste dokumenter. Om du ikke finner riktig kategori her, kan du se vår interne dokumentmodell. Den finnes på siden for opplasting på Master.",
     ],
 )
-if docType == "Datablad :ledger:":
-    docType = "4"
-    docText = "datablad"
-elif docType == "Installasjonsmanual :open_book:":
-    docType = "1"
-    docText = "installasjonsmanual"
-elif docType == "Brukermanual :closed_book:":
-    docType = "0"
-    docText = "brukermanual"
-elif docType == "Forenklet brukerveiledning  :clock9:":
-    docType = "2"
-    docText = "forenklet brukerveiledning"
-elif docType == "Forenklet installasjonsveiledning :japan:":
-    docType = "5"
-    docText = "forenklet installasjonsveiledning"
-elif docType == "Leverandørdokumentasjon :file_folder:":
-    docType = "9"
-    docText = "leverandørdokumentasjon"
-elif docType == "Sertifikat :bookmark_tabs:":
-    docType = "151"
-    docText = "sertifikat"
-elif docType == "Egenerklæring :memo:":
-    docType = "155"
-    docText = "egenerklæring"
-elif docType == "Sikkerhetsdatablad :warning:":
-    docType = "153"
-    docText = "sikkerhetsdatablad"
-elif docType == "Godkjenning :ballot_box_with_check:":
-    docType = "150"
-    docText = "godkjenning"
-elif docType == "Annet dokument :page_facing_up:":
-    docType = ""
-    docText = "annet dokument"  # Dette er en plassholder for andre dokumenter som ikke er spesifisert
-                            # Ved dokument som ikke er speisifisert. Ellers skal denne blokken gjøre at man kan sette sammen en streng som kan brukes til å generere teksten lenger nede.
-                            # Denne oversetter doktype 4 = datablad osv.
-else:
+# Mapping of document types to code and description
+doc_type_map = {
+    "Datablad :ledger:": ("4", "datablad"),
+    "Installasjonsmanual :open_book:": ("1", "installasjonsmanual"),
+    "Brukermanual :closed_book:": ("0", "brukermanual"),
+    "Forenklet brukerveiledning  :clock9:": ("2", "forenklet brukerveiledning"),
+    "Forenklet installasjonsveiledning :japan:": ("5", "forenklet installasjonsveiledning"),
+    "Leverandørdokumentasjon :file_folder:": ("9", "leverandørdokumentasjon"),
+    "Sertifikat :bookmark_tabs:": ("151", "sertifikat"),
+    "Egenerklæring :memo:": ("155", "egenerklæring"),
+    "Sikkerhetsdatablad :warning:": ("153", "sikkerhetsdatablad"),
+    "Godkjenning :ballot_box_with_check:": ("150", "godkjenning"),
+    "Annet dokument :page_facing_up:": ("", "annet dokument"),  # Default placeholder
+}
+
+# Look up selected document type; stop execution on unexpected values
+docType, docText = doc_type_map.get(docType, (None, None))
+if docType is None:
     st.error("En uventet feil har oppstått. Vennligst prøv igjen.")
     st.stop()
+
 
 st.write("#### Revisjonsnummer")
 revNo = st.text_input("Kontroller at revisjonsnummer stemmer overens med det i dokumentet.","R1A")
