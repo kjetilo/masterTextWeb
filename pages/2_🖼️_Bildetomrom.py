@@ -8,20 +8,43 @@ try:
     import pillow_heif
     pillow_heif.register_heif_opener()
 except ImportError:
-    pass  # Ingen advarsel, kjører bare uten HEIF/AVIF-støtte
+    pass
 
-st.title("Fjern tomrommet på kantene av bilder og konverter til WebP")
+st.title("Fjern tomrommet på kantene av bilder og konverter")
 st.sidebar.header("Innstillinger")
 
-# Slider for WebP-kvalitet
-webp_quality = st.sidebar.slider(
-    "Velg WebP-kvalitet",
-    min_value=0,
-    max_value=100,
-    value=100,
-    step=1,
-    help="Lavere verdi gir mindre filer, men lavere bildekvalitet"
+# Velg utdataformat
+output_format = st.sidebar.radio(
+    "Velg nedlastingsformat",
+    ["WebP", "PNG"],
+    index=0,
+    help="WebP gir mindre filer, PNG gir maks kompatibilitet"
 )
+
+# Slider for WebP-kvalitet (vises kun hvis WebP valgt)
+if output_format == "WebP":
+    webp_quality = st.sidebar.slider(
+        "Velg WebP-kvalitet",
+        min_value=0,
+        max_value=100,
+        value=100,
+        step=1,
+        help="Lavere verdi gir mindre filer, men lavere bildekvalitet"
+    )
+else:
+    webp_quality = 100  # Brukes for internprosessering
+
+# Mulighet for kvadratiske bilder med luft
+make_square_images = st.sidebar.checkbox("Lag kvadratiske bilder med luft", value=False)
+padding_ratio = 0.0
+if make_square_images:
+    padding_ratio = st.sidebar.slider(
+        "Luft rundt bildet (prosent av bildet)",
+        min_value=0,
+        max_value=50,
+        value=10,
+        step=1
+    ) / 100
 
 # Filnavnvalg
 st.sidebar.subheader("Filnavnvalg")
@@ -47,8 +70,21 @@ def trim_transparent(image: Image.Image) -> Image.Image:
     bbox = img.getbbox()
     return img.crop(bbox) if bbox else img
 
-def process_file(file, idx, quality=90, article_number="", keep_original=False):
-    """Behandler en fil: Trimmer og konverterer til WebP"""
+def make_square(image: Image.Image, padding_ratio: float = 0.1) -> Image.Image:
+    """Gjør bildet til et kvadrat med gjennomsiktig luft rundt"""
+    w, h = image.size
+    max_side = max(w, h)
+    padded_side = int(max_side * (1 + padding_ratio * 2))  # Luft på alle sider
+
+    square_img = Image.new("RGBA", (padded_side, padded_side), (0, 0, 0, 0))
+    x = (padded_side - w) // 2
+    y = (padded_side - h) // 2
+    square_img.paste(image, (x, y))
+
+    return square_img
+
+def process_file(file, idx, quality=90, article_number="", keep_original=False, make_square_images=False, padding_ratio=0.1, output_format="WebP"):
+    """Behandler en fil: Trimmer og konverterer til valgt format"""
     try:
         image = Image.open(file)
     except UnidentifiedImageError:
@@ -56,38 +92,53 @@ def process_file(file, idx, quality=90, article_number="", keep_original=False):
 
     trimmed_image = trim_transparent(image)
 
+    # Hvis valgt, gjør bildet kvadratisk med luft
+    if make_square_images:
+        trimmed_image = make_square(trimmed_image, padding_ratio)
+
+    # Bestem filformat og konverter
     buf = io.BytesIO()
-    trimmed_image.save(buf, format="WEBP", quality=quality, method=6)
+    ext = output_format.lower()
+    save_format = "WEBP" if output_format == "WebP" else "PNG"
+
+    if output_format == "WebP":
+        trimmed_image.save(buf, format=save_format, quality=quality, method=6)
+    else:
+        # PNG ignorerer kvalitet, lagres tapsfritt
+        trimmed_image.save(buf, format=save_format)
+
     buf.seek(0)
 
     # Bestem filnavn
     if keep_original or not article_number.strip():
-        out_name = f"cropped_{file.name.rsplit('.', 1)[0]}.webp"
+        out_name = f"cropped_{file.name.rsplit('.', 1)[0]}.{ext}"
     else:
-        out_name = f"{article_number.strip()}, {idx + 1}.webp"
+        out_name = f"{article_number.strip()}, {idx + 1}.{ext}"
 
     return out_name, buf.getvalue()
 
 @st.cache_data(show_spinner=False)
-def process_images(files, quality, article_number="", keep_original=False):
+def process_images(files, quality, article_number="", keep_original=False, make_square_images=False, padding_ratio=0.1, output_format="WebP"):
     """Prosesserer alle bilder parallelt og cacher resultatet"""
     files_to_process = files[:300]
     total = len(files_to_process)
-    cropped_images = []
+    processed_images = []
 
     progress_bar = st.progress(0)
     status_text = st.empty()
 
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = {
-            executor.submit(process_file, file, idx, quality, article_number, keep_original): file
+            executor.submit(
+                process_file, file, idx, quality, article_number, keep_original, make_square_images, padding_ratio, output_format
+            ): file
             for idx, file in enumerate(files_to_process)
         }
 
         for idx, future in enumerate(as_completed(futures), start=1):
             filename, data = future.result()
             if data:
-                cropped_images.append((filename, data))
+                processed_images.append((filename, data))
 
             progress_bar.progress(idx / total)
             status_text.text(f"Behandler bilde {idx}/{total}...")
@@ -95,35 +146,37 @@ def process_images(files, quality, article_number="", keep_original=False):
     status_text.text("✅ Ferdig!")
     progress_bar.empty()
 
-    return cropped_images
+    return processed_images
 
 if uploaded_files:
-    cropped_images = process_images(uploaded_files, webp_quality, article_number, keep_original_names)
+    processed_images = process_images(
+        uploaded_files, webp_quality, article_number, keep_original_names, make_square_images, padding_ratio, output_format
+    )
 
     st.subheader("🔽 Nedlastingsvalg")
 
     # ZIP download
-    if len(cropped_images) > 1:
+    if len(processed_images) > 1:
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w") as zip_file:
-            for filename, data in cropped_images:
+            for filename, data in processed_images:
                 zip_file.writestr(filename, data)
         zip_buffer.seek(0)
 
         st.download_button(
-            label=f"Last ned alle som ZIP (WebP, kvalitet {webp_quality})",
+            label=f"Last ned alle som ZIP ({output_format})",
             data=zip_buffer,
-            file_name="cropped_images_webp.zip",
+            file_name=f"cropped_images.{output_format.lower()}.zip",
             mime="application/zip"
         )
 
     # Individual downloads
-    for filename, data in cropped_images:
+    for filename, data in processed_images:
         st.download_button(
             label=f"Last ned {filename}",
             data=data,
             file_name=filename,
-            mime="image/webp",
+            mime=f"image/{output_format.lower()}",
             key=f"dl_{filename}"
         )
 
@@ -131,6 +184,6 @@ if uploaded_files:
 
     # Show previews in 3 columns
     cols = st.columns(3)
-    for idx, (filename, data) in enumerate(cropped_images):
+    for idx, (filename, data) in enumerate(processed_images):
         with cols[idx % 3]:
             st.image(data, caption=f"Beskåret: {filename}", use_container_width=True)
