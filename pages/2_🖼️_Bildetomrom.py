@@ -10,7 +10,7 @@ try:
 except ImportError:
     pass
 
-st.title("Fjern tomrommet på kantene av bilder og konverter")
+st.title("🖼️ Fjern tomrommet på kantene av bilder og konverter")
 st.sidebar.header("Innstillinger")
 
 # Velg utdataformat

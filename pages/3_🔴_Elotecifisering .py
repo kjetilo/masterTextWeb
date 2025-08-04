@@ -11,7 +11,7 @@ if not api_key:
 
 client = OpenAI(api_key=api_key)
 
-st.title("🔴 Elotecify Document Processor")
+st.title("🔴 Elotecifisering ved hjelp av OpenAI")
 
 uploaded_file = st.file_uploader("Last opp dokument (Word, PDF, TXT)", type=["docx", "pdf", "txt"])
 
