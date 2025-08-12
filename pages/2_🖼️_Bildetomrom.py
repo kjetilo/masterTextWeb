@@ -123,7 +123,7 @@ def process_file(file, idx, quality=90, article_number="", keep_original=False,
     # Bestem filnavn
     original_name = file.name.rsplit('.', 1)[0]
     if keep_original or not article_number.strip():
-        out_name = f"cropped_{original_name}.{ext}"
+        out_name = f"{original_name}.{ext}"
     else:
         if append_original:
             out_name = f"{article_number.strip()}, {original_name}.{ext}"
@@ -186,7 +186,7 @@ if uploaded_files:
         st.download_button(
             label=f"Last ned alle som ZIP ({output_format})",
             data=zip_buffer,
-            file_name=f"cropped_images.{output_format.lower()}.zip",
+            file_name=f"{output_format.lower()}.zip",
             mime="application/zip"
         )
 
