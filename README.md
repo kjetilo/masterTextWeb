@@ -1,1 +1,1 @@
-These python webapps made with streamlit as frontend are made to optimize uploads to Master faster. It consists of an app that creates text that is then used for a file name in order to categorize and one that crops pictures.
+These python webapps made with streamlit as frontend are made to optimize uploads to Master faster. It consists of an app that creates text that is then used for a file name in order to categorize and one that crops pictures. A new page lets you upload a PDF and download an optimized version for faster viewing and smaller file size.
