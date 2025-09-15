@@ -5,3 +5,4 @@ pillow
 pillow-heif
 openai
 pypdf
+reportlab
