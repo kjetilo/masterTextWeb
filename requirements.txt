@@ -4,3 +4,4 @@ google-cloud-logging
 pillow
 pillow-heif
 openai
+pypdf
