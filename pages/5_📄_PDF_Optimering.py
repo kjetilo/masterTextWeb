@@ -81,7 +81,7 @@ if uploaded_file is not None:
         status = " og ".join(success_msg)
         st.success(f"PDF-en er {status} og klar for nedlasting.")
         st.download_button(
-            label="Last ned optimalisert PDF",
+            label="Last ned PDF",
             data=output,
             file_name=f"optimalisert_{uploaded_file.name}",
             mime="application/pdf",
