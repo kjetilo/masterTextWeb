@@ -16,6 +16,7 @@ except Exception:  # pragma: no cover - handled at runtime
 st.set_page_config(page_title="PDF-optimalisering og vannmerking", page_icon=":page_facing_up:")
 
 st.markdown("# 📄 PDF-optimalisering og vannmerking")
+
 article_number = st.text_input("Artikkelnr")
 uploaded_file = st.file_uploader("Last opp en PDF-fil", type=["pdf"])
 add_watermark = st.checkbox("Legg til vannmerking")
@@ -38,20 +39,24 @@ if uploaded_file is not None:
             page_width = float(page.mediabox.width)
             page_height = float(page.mediabox.height)
             if add_watermark:
-                watermark_text = (
-                    f"Elotec AS - kun for intern bruk. Artikkelnr {article_number} {today}"
-                )
+                line1 = "Elotec AS - kun for intern bruk."
+                line2 = f"Artikkelnr {article_number} {today}"
                 packet = BytesIO()
                 can = canvas.Canvas(packet, pagesize=(page_width, page_height))
                 can.saveState()
                 can.translate(page_width / 2, page_height / 2)
                 can.rotate(45)
-                can.setFont("Helvetica", 30)
+
+                can.setFont("Helvetica", 40)
+
                 try:
                     can.setFillAlpha(0.3)
                 except Exception:
                     pass
-                can.drawCentredString(0, 0, watermark_text)
+                  
+                can.drawCentredString(0, 20, line1)
+                can.drawCentredString(0, -20, line2)
+
                 can.restoreState()
                 can.save()
                 packet.seek(0)
