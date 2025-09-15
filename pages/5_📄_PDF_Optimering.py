@@ -13,9 +13,10 @@ try:
 except Exception:  # pragma: no cover - handled at runtime
     canvas = None
 
-st.set_page_config(page_title="PDF-optimalisering", page_icon=":page_facing_up:")
+st.set_page_config(page_title="PDF-optimalisering og vannmerking", page_icon=":page_facing_up:")
 
-st.markdown("# 📄 PDF-optimalisering")
+st.markdown("# 📄 PDF-optimalisering og vannmerking")
+
 article_number = st.text_input("Artikkelnr")
 uploaded_file = st.file_uploader("Last opp en PDF-fil", type=["pdf"])
 add_watermark = st.checkbox("Legg til vannmerking")
@@ -45,13 +46,17 @@ if uploaded_file is not None:
                 can.saveState()
                 can.translate(page_width / 2, page_height / 2)
                 can.rotate(45)
+
                 can.setFont("Helvetica", 40)
+
                 try:
                     can.setFillAlpha(0.3)
                 except Exception:
                     pass
+                  
                 can.drawCentredString(0, 20, line1)
                 can.drawCentredString(0, -20, line2)
+
                 can.restoreState()
                 can.save()
                 packet.seek(0)
