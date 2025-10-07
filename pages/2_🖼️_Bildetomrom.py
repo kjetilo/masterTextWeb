@@ -22,6 +22,7 @@ output_format = st.sidebar.radio(
 )
 
 # Slider for WebP-kvalitet (vises kun hvis WebP valgt)
+webp_lossless = False
 if output_format == "WebP":
     webp_quality = st.sidebar.slider(
         "Velg WebP-kvalitet",
@@ -31,11 +32,12 @@ if output_format == "WebP":
         step=1,
         help="Lavere verdi gir mindre filer, men lavere bildekvalitet"
     )
+    webp_lossless = st.sidebar.checkbox("Lossless komprimering", value=True, help="Gir perfekt bildekvalitet, men større filer enn \'lossy\'. Kvalitetsslideren styrer da komprimeringsgraden.")
 else:
     webp_quality = 100  # Brukes for internprosessering
 
 # Mulighet for kvadratiske bilder med luft
-make_square_images = st.sidebar.checkbox("Lag kvadratiske bilder med luft", value=False)
+make_square_images = st.sidebar.checkbox("Lag kvadratiske bilder med luft", value=True)
 padding_ratio = 0.0
 if make_square_images:
     padding_ratio = st.sidebar.slider(
@@ -81,13 +83,13 @@ def trim_transparent(image: Image.Image) -> Image.Image:
     bbox = img.getbbox()
     return img.crop(bbox) if bbox else img
 
-def make_square(image: Image.Image, padding_ratio: float = 0.1) -> Image.Image:
+def make_square(image: Image.Image, padding_ratio: float = 0.1, bg_color=(0, 0, 0, 0)) -> Image.Image:
     """Gjør bildet til et kvadrat med gjennomsiktig luft rundt"""
     w, h = image.size
     max_side = max(w, h)
     padded_side = int(max_side * (1 + padding_ratio * 2))  # Luft på alle sider
 
-    square_img = Image.new("RGBA", (padded_side, padded_side), (0, 0, 0, 0))
+    square_img = Image.new("RGBA", (padded_side, padded_side), bg_color)
     x = (padded_side - w) // 2
     y = (padded_side - h) // 2
     square_img.paste(image, (x, y))
@@ -95,8 +97,8 @@ def make_square(image: Image.Image, padding_ratio: float = 0.1) -> Image.Image:
     return square_img
 
 def process_file(file, idx, quality=90, article_number="", keep_original=False,
-                 make_square_images=False, padding_ratio=0.1,
-                 output_format="WebP", append_original=False):
+                 make_square_images=False, padding_ratio=0.1, bg_color=(0, 0, 0, 0),
+                 output_format="WebP", append_original=False, lossless=False):
     """Behandler en fil: Trimmer og konverterer til valgt format"""
     try:
         image = Image.open(file)
@@ -106,7 +108,7 @@ def process_file(file, idx, quality=90, article_number="", keep_original=False,
     trimmed_image = trim_transparent(image)
 
     if make_square_images:
-        trimmed_image = make_square(trimmed_image, padding_ratio)
+        trimmed_image = make_square(trimmed_image, padding_ratio, bg_color)
 
     # Konverter til valgt format
     buf = io.BytesIO()
@@ -114,7 +116,7 @@ def process_file(file, idx, quality=90, article_number="", keep_original=False,
     save_format = "WEBP" if output_format == "WebP" else "PNG"
 
     if output_format == "WebP":
-        trimmed_image.save(buf, format=save_format, quality=quality, method=6)
+        trimmed_image.save(buf, format=save_format, quality=quality, method=6, lossless=lossless)
     else:
         trimmed_image.save(buf, format=save_format)
 
@@ -134,8 +136,8 @@ def process_file(file, idx, quality=90, article_number="", keep_original=False,
 
 @st.cache_data(show_spinner=False)
 def process_images(files, quality, article_number="", keep_original=False,
-                   make_square_images=False, padding_ratio=0.1, output_format="WebP",
-                   append_original=False):
+                   make_square_images=False, padding_ratio=0.1, bg_color=(0, 0, 0, 0),
+                   output_format="WebP", append_original=False, lossless=False):
     """Prosesserer alle bilder parallelt og cacher resultatet"""
     files_to_process = files[:300]
     total = len(files_to_process)
@@ -148,7 +150,7 @@ def process_images(files, quality, article_number="", keep_original=False,
         futures = {
             executor.submit(
                 process_file, file, idx, quality, article_number, keep_original,
-                make_square_images, padding_ratio, output_format, append_original
+                make_square_images, padding_ratio, bg_color, output_format, append_original, lossless
             ): file
             for idx, file in enumerate(files_to_process)
         }
@@ -169,8 +171,9 @@ def process_images(files, quality, article_number="", keep_original=False,
 if uploaded_files:
     processed_images = process_images(
         uploaded_files, webp_quality, article_number, keep_original_names,
-        make_square_images, padding_ratio, output_format,
-        append_original=append_original_after_article
+        make_square_images, padding_ratio,
+        output_format=output_format,
+        append_original=append_original_after_article, lossless=webp_lossless
     )
 
     st.subheader("🔽 Nedlastingsvalg")
