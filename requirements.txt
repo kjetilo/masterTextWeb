@@ -6,3 +6,7 @@ pillow-heif
 openai
 pypdf
 reportlab
+requests
+beautifulsoup4
+selenium
+webdriver-manager-selenium
