@@ -12,7 +12,8 @@ artNo = st.text_input("Skriv inn artikkelnummer her")
 st.write("#### Dokumenttype")
 docType = st.radio(
     "Velg dokumenttypen som stemmer overens med det du skal laste opp.",
-    ["Datablad :ledger:","Installasjonsmanual :open_book:", "Brukermanual :closed_book:", "Forenklet brukerveiledning  :clock9:", "Forenklet installasjonsveiledning :japan:", "Leverandørdokumentasjon :file_folder:", "Sertifikat :bookmark_tabs:", "Egenerklæring :memo:", "Sikkerhetsdatablad :warning:", "Godkjenning :ballot_box_with_check:", "Annet dokument :page_facing_up:"],
+    ["Datablad :ledger:","Installasjonsmanual :open_book:", "Brukermanual :closed_book:", "Forenklet brukerveiledning  :clock9:", "Forenklet installasjonsveiledning :japan:", "Leverandørdokumentasjon :file_folder:", 
+     "Sertifikat :bookmark_tabs:", "Egenerklæring :memo:", "Sikkerhetsdatablad :warning:", "Godkjenning :ballot_box_with_check:", "Brosjyre  :chart_with_upwards_trend:", "Annet dokument :page_facing_up:"],
     captions=[
         "Datablad beskriver tekniske spesifikasjoner og egenskaper. Brukes ofte som FDV i vår bransje.",
         "Installasjonsmanual beskriver hvordan man installerer produktet, men ikke hvordan man bruker det. Brukermanual er ofte for sluttbruker, mens installasjonsmanual er for installatør.",
@@ -24,6 +25,7 @@ docType = st.radio(
         "En erklæring fra produsenten om at produktet oppfyller de relevante sikkerhetskravene, vanligvis i forbindelse med CE-merking.",
         "Et sikkerhetsdatablad (SDS) er et dokument som gir detaljert informasjon om et kjemisk stoff eller en stoffblanding.",
         "Viser om produktet er godkjent iht. gitte standarder.",
+        "Brosjyre for markedsføring eller lignende",
         "Master håndterer de fleste dokumenter. Om du ikke finner riktig kategori her, kan du se vår interne dokumentmodell. Den finnes på siden for opplasting på Master.",
     ],
 )
@@ -39,6 +41,7 @@ doc_type_map = {
     "Egenerklæring :memo:": ("155", "egenerklæring"),
     "Sikkerhetsdatablad :warning:": ("153", "sikkerhetsdatablad"),
     "Godkjenning :ballot_box_with_check:": ("150", "godkjenning"),
+    "Brosjyre  :chart_with_upwards_trend:": ("3", "brosjyre"),
     "Annet dokument :page_facing_up:": ("", "annet dokument"),  # Default placeholder
 }
 
